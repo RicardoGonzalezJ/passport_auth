@@ -3,7 +3,6 @@
 const dbcon = require('../../db/dbcon');
 
 exports.isAuthenticated = (req, res, next) => {
-  console.log('req.isAuth', req.isAuthenticated(), typeof req.session.passport);
   if (!req.isAuthenticated()) {
     res.redirect('/users/login');
   } else {

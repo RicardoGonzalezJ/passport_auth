@@ -43,7 +43,6 @@ router.post('/login', (req, res, next) => {
       console.log('error on userController.js post /login err', err);
       return err;
     }
-    console.log('user', user);
     if (!user) {
       req.flash('info');
       return res.redirect('/users/login');
