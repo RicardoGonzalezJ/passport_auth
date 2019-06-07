@@ -2,32 +2,38 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 
 const init = require('./serialize_deserialize');
+const { isEmptyObject } = require('../../api/helpers/helpers');
 const dbcon = require('../../db/dbcon');
 
-const option = {};
+const option = {
+  passReqToCallback: true,
+};
 
 function findUser(username, password, cb) {
-  const query = `SELECT idusuario, nombre_u, apellido_u, idundg, correo
+  const query = `SELECT idusuario, nombre_u, apellido_u, idundg, correo, 
+                  (SELECT password = $2 from usuario where idusuario = $1) AS validPass 
                   FROM usuario 
                  WHERE 
-                  idusuario = $1 AND password = $2;`;
+                  idusuario = $1;`;
   const values = [username, password];
   dbcon.query(query, values, cb);
 }
 
 init();
 
-passport.use(new LocalStrategy(option, (username, password, done) => {
+passport.use(new LocalStrategy(option, (req, username, password, done) => {
   findUser(username, password, (err, userData) => {
     if (err) {
       console.log('error on passportConfig.js LocalStrategy', err);
       throw done(err);
     } else {
-      if (!userData) return done(null, false);
-      if (!password) {
-        return done(null, false);
+      if (isEmptyObject(userData.rows[0])) {
+        return done(null, false, req.flash('info', 'user not found'));
       }
-      return done(null, userData.rows);
+      if (!userData.rows[0].validpass) {
+        return done(null, false, req.flash('info', 'password is incorrect'));
+      }
+      return done(null, userData.rows[0]);
     }
   });
 }));
